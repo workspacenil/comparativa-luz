@@ -48,15 +48,16 @@ summary{cursor:pointer;font-weight:600;font-size:13px}
   <div id="periodInputs"></div>
   <div class="grid2">
     <div><label>Dias de la factura</label><input id="days" type="number" inputmode="numeric" min="1" step="1" value="30"></div>
+    <div><label>Numero de facturas (Factor cobra 3 EUR por factura)</label><input id="bills" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
     <div><label>Total ultima factura (opcional)</label><input id="lastBill" type="number" inputmode="decimal" min="0" step="any" placeholder="EUR"></div>
   </div>
   <details>
     <summary>Impuestos y costes fijos comunes</summary>
-    <p class="fine">Iguales con cualquier compania: no cambian cual sale mas barata. Peninsula, nov 2026: IVA 21% e impuesto electrico 5,113% (vigentes desde el 1-jun-2026). "Otros fijos" cubre bono social y alquiler de contador si aplica.</p>
+    <p class="fine">Iguales con cualquier compania: no cambian cual sale mas barata. Peninsula, nov 2026: IVA 21% e impuesto electrico 5,113% (vigentes desde el 1-jun-2026). "Otros fijos" es un supuesto editable para costes comunes (p. ej. financiacion del bono social o alquiler de contador): no esta verificado para este suministro. El impuesto electrico se calcula solo sobre potencia y energia; las cuotas y otros fijos llevan IVA pero no IEE.</p>
     <div class="grid2">
       <div><label>IVA %</label><input id="iva" type="number" inputmode="decimal" step="any" value="21"></div>
       <div><label>Impuesto electrico %</label><input id="iee" type="number" inputmode="decimal" step="any" value="5.11269632"></div>
-      <div><label>Otros fijos EUR/dia</label><input id="fixedDay" type="number" inputmode="decimal" step="any" value="0.05"></div>
+      <div><label>Otros fijos EUR/dia (supuesto editable)</label><input id="fixedDay" type="number" inputmode="decimal" step="any" value="0.05"></div>
     </div>
   </details>
 </div>
@@ -70,7 +71,7 @@ summary{cursor:pointer;font-weight:600;font-size:13px}
 </div>
 <div class="sect">Como se calcula</div>
 <div class="card">
-  <p class="fine">Potencia (kW x precio x dias) + energia (kWh x precio) + cuotas fijas de cada oferta + otros fijos comunes; encima impuesto electrico y IVA. Los precios de ambas ofertas ya incluyen peajes y cargos regulados y no incluyen IEE ni IVA: base comparable. Factor Energia ano 1 usa el precio con el 33,5% de descuento del PDF; ano 2 muestra el precio estimado al caducar el 20% adicional del primer ano. La oferta del chat no entra en el calculo por falta de unidades.</p>
+  <p class="fine">Potencia (kW x precio x dias en cada periodo) + energia (kWh x precio de cada periodo; en Factor, precio unico sobre el total de kWh) + 3 EUR por factura de Factor (tu indicas cuantas facturas cubre el periodo) + otros fijos comunes; encima impuesto electrico y IVA. Los precios de ambas ofertas ya incluyen peajes y cargos regulados y no incluyen IEE ni IVA: base comparable. Factor Energia ano 1 usa el precio con el 33,5% de descuento del PDF; ano 2 muestra el precio estimado al caducar el 20% adicional del primer ano (clausula ambigua). La oferta del chat no entra en el calculo por falta de unidades.</p><p class="fine"><b>Que no incluyen los totales:</b> los RTT/SA de Factor (importe variable, ver notas), el servicio opcional de emergencias de Factor, y posibles cambios regulatorios futuros (peajes, cargos o impuestos: ambas ofertas los trasladan al precio). La cifra anual supone el mismo ritmo de consumo todo el ano.</p>
 </div>
 <script>
 // TotalEnergies "Clasica TE1": anexo PDF, campana 28-oct al 11-nov-2026, precios fijos 12 meses,
@@ -79,7 +80,7 @@ const TE={
  name:'TotalEnergies Clasica TE1',
  src:'PDF: anexo de condiciones TotalEnergies (oferta hasta el 11-nov-2026)',
  fee:0,
- notes:['Precio fijo durante 12 meses desde el inicio.','Hay que firmar antes del 11 de noviembre de 2026.','Valida solo en la peninsula, hasta 3 GWh/ano.','Opcion de precio unico de energia: 0,236996 EUR/kWh (3.0TD) o 0,253106 EUR/kWh (2.0TD).'],
+ notes:['Precio comercial fijo 12 meses; si cambian peajes, cargos u otros conceptos regulados (o los impuestos), el cambio se traslada automaticamente al precio (letra pequena de la propia oferta).','Hay que firmar antes del 11 de noviembre de 2026.','Valida solo en la peninsula, hasta 3 GWh/ano.','Opcion de precio unico de energia: 0,236996 EUR/kWh (3.0TD) o 0,253106 EUR/kWh (2.0TD).'],
  g:{'3.0TD':{pw:[0.057581,0.030843,0.014032,0.012401,0.008641,0.017102],en:[0.342558,0.296172,0.20558,0.172913,0.156413,0.211397]},
     '2.0TD':{pw:[0.0868614,0.0129464],en:[0.320875,0.238911,0.214738]}}
 };
@@ -89,8 +90,8 @@ const TE={
 const FACTOR={
  name:'Factor Energia (oferta 1126PROF1P)',
  src:'PDF: condiciones particulares Factor Energia (oferta hasta el 15-nov-2026)',
- fee:3,
- notes:['Cuota extra de 3 EUR en cada factura (soporte de gestion).','Precio revisable cada trimestre si los futuros OMIP superan 75 EUR/MWh, y cada ano con el IPC.','Penalizacion por baja en el primer ano: 5% de la energia estimada pendiente.','Servicios de ajuste (RTT/SA) se facturan aparte (+1,7 EUR/MWh).','El 20% de descuento adicional es solo el primer ano. El precio exacto del ano 2 no queda claro en el contrato: la cifra mostrada es una estimacion.','Servicio opcional de emergencias 9,68 EUR/mes (no incluido aqui).'],
+ feePerBill:3,
+ notes:['Cuota extra de 3 EUR en cada factura (soporte de gestion; facturacion mensual).','Precio revisable cada trimestre si los futuros OMIP superan 75 EUR/MWh, y cada ano con el IPC.','Penalizacion por baja en el primer ano: 5% de la energia estimada pendiente.','RTT/SA (restricciones tecnicas y servicios de ajuste) NO van en el precio: se cobran aparte segun la liquidacion real mas 1,7 EUR/MWh. La factura real de Factor sera algo mayor que el total mostrado.','El 20% de descuento adicional es solo el primer ano. El precio exacto del ano 2 no queda claro en el contrato: la cifra mostrada es una estimacion.','Servicio opcional de emergencias 9,68 EUR/mes (no incluido aqui).'],
  g:{'3.0TD':{pw:[21.672903,12.209087,7.173408,6.190994,4.951438,4.071161].map(x=>x/365),e1:0.187408,e2:0.23426},
     '2.0TD':{pw:[32.496149,6.826865].map(x=>x/365),e1:0.212886,e2:0.212886/0.8}}
 };
@@ -113,7 +114,7 @@ function readProfile(){
  const kwh=[],kw=[];
  document.querySelectorAll('.kwh').forEach(i=>kwh[+i.dataset.i]=parseFloat(i.value)||0);
  document.querySelectorAll('.kw').forEach(i=>kw[+i.dataset.i]=parseFloat(i.value)||0);
- return {kwh,kw,days:parseFloat($('days').value)||30,
+ return {kwh,kw,days:parseFloat($('days').value)||30,bills:Math.max(1,Math.round(parseFloat($('bills').value)||1)),
   iva:parseFloat($('iva').value)||0, iee:parseFloat($('iee').value)||0, fixedDay:parseFloat($('fixedDay').value)||0,
   lastBill:parseFloat($('lastBill').value)||0};
 }
@@ -128,11 +129,11 @@ function costFactor(g,p,year){
  const power=d.pw.reduce((s,pr,i)=>s+(p.kw[i]||0)*pr*p.days,0);
  const e=year===1?d.e1:d.e2;
  const energy=p.kwh.reduce((s,k)=>s+k,0)*e;
- return {power,energy,fee:FACTOR.fee};
+ return {power,energy,fee:FACTOR.feePerBill*p.bills,bills:p.bills};
 }
 function withTaxes(c,p){
  const common=p.fixedDay*p.days;
- const iee=(c.power+c.energy+common)*p.iee/100;
+ const iee=(c.power+c.energy)*p.iee/100; // IEE solo sobre potencia y energia
  const ivaBase=c.power+c.energy+common+c.fee+iee;
  const iva=ivaBase*p.iva/100;
  return {...c,common,iee,iva,total:ivaBase+iva};
@@ -141,13 +142,13 @@ function cardHTML(name,src,r,p,best,notes,year2){
  let h='<div class="card'+(best?' winner':'')+'"><h2>'+name+(best?'<span class="badge">MEJOR</span>':'')+'<span class="src">'+src+'</span></h2>';
  h+='<div class="row"><span>Potencia</span><span class="v">'+fmt(r.power)+'</span></div>';
  h+='<div class="row"><span>Energia</span><span class="v">'+fmt(r.energy)+'</span></div>';
- if(r.fee) h+='<div class="row"><span>Cuota por factura</span><span class="v">'+fmt(r.fee)+'</span></div>';
+ if(r.fee) h+='<div class="row"><span>Cuota fija (3 EUR x '+(r.bills||1)+' factura'+((r.bills||1)>1?'s':'')+')</span><span class="v">'+fmt(r.fee)+'</span></div>';
  h+='<div class="row"><span>Otros fijos comunes</span><span class="v">'+fmt(r.common)+'</span></div>';
  h+='<div class="row"><span>Impuesto electrico</span><span class="v">'+fmt(r.iee)+'</span></div>';
  h+='<div class="row"><span>IVA</span><span class="v">'+fmt(r.iva)+'</span></div>';
  h+='<div class="row total"><span>Total '+p.days+' dias</span><span class="v">'+fmt(r.total)+'</span></div>';
- h+='<div class="row total2"><span>Estimacion al ano</span><span class="v">'+fmt(r.total*365/p.days)+'</span></div>';
- if(year2!=null) h+='<div class="row total2"><span>Ano 2 ESTIMADO (clausula sin confirmar)</span><span class="v">'+fmt(year2.total*365/p.days)+'/ano</span></div>';
+ h+='<div class="row total2"><span>Estimacion al ano (mismo ritmo)</span><span class="v">'+fmt(r.total*365/p.days)+'</span></div>';
+ if(year2!=null) h+='<div class="row total2"><span>Ano 2 ESTIMADO al ano (clausula sin confirmar)</span><span class="v">'+fmt(year2.total*365/p.days)+'/ano</span></div>';
  if(notes&&notes.length) h+='<ul class="fine">'+notes.map(n=>'<li>'+n+'</li>').join('')+'</ul>';
  return h+'</div>';
 }
@@ -162,14 +163,15 @@ function render(){
  let bestI=0; res.forEach((x,i)=>{if(x.r.total<res[bestI].r.total)bestI=i;});
  wrap.innerHTML=res.map((x,i)=>cardHTML(x.name,x.src,x.r,p,i===bestI,x.notes,x.year2)).join('');
  const best=res[bestI];
- let vh='Con ese consumo sale mejor <b>'+best.name+'</b>: '+fmt(best.r.total)+' cada '+p.days+' dias.';
+ let vh='Con ese consumo y los precios actuales, el menor subtotal calculable es <b>'+best.name+'</b>: '+fmt(best.r.total)+' cada '+p.days+' dias. Con cargos variables desconocidos (RTT/SA de Factor), el orden real puede cambiar.';
  vh+='<small>'+res.filter((x,i)=>i!==bestI).map(x=>'Ahorra '+fmt(x.r.total-best.r.total)+' frente a '+x.name+' ('+fmt((x.r.total-best.r.total)*365/p.days)+' al ano)').join('<br>')+'</small>';
  if(p.lastBill) vh+='<small>Tu ultima factura: '+fmt(p.lastBill)+'. Compara con el "Total" de arriba para ver el ahorro frente a tu tarifa actual.</small>';
- vh+='<small>Cuidado: el mejor ano 1 puede no serlo a largo plazo. Mira la fila "Ano 2" y las notas de cada oferta.</small>';
+ if(best.name.indexOf('Factor')===0) vh+='<small>Ojo: a este total de Factor le faltan los RTT/SA (importe variable, liquidacion real + 1,7 EUR/MWh). Su factura real sera mayor: la diferencia con TotalEnergies puede ser menor o incluso invertirse.</small>';
+ vh+='<small>Cuidado: el mejor ano 1 puede no serlo a largo plazo. La fila "Ano 2" es un escenario sin confirmar, no un precio contractual. Mira las notas de cada oferta.</small>';
  const vd=$('verdict'); vd.style.display='block'; vd.innerHTML=vh;
 }
 $('group').addEventListener('change',render);
-document.querySelectorAll('#days,#lastBill,#iva,#iee,#fixedDay').forEach(i=>i.addEventListener('input',render));
+document.querySelectorAll('#days,#bills,#lastBill,#iva,#iee,#fixedDay').forEach(i=>i.addEventListener('input',render));
 buildInputs(); render();
 </script>
 </body>
